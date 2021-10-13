@@ -1,0 +1,160 @@
+// https://itnext.io/testing-react-16-3-components-with-react-test-renderer-without-enzyme-d9c65d689e88
+import React from 'react';
+import {act, create, ReactTestRenderer} from 'react-test-renderer';
+import {render, fireEvent, waitFor} from '@testing-library/react-native';
+import 'jest-styled-components/native';
+import '../../../lib/firebase/FirebaseMock';
+
+jest.unmock('react-native');
+
+// assumes there's a default mock in ./__mocks__
+// jest.unmock('./CrossButton');
+
+// Default export requires this type of mocking
+// jest.mock('react-native-stager', () => ({
+//   __esModule: true,
+//   Stage: 'View',
+//   StageButtons: 'View',
+//   StageProgress: 'View',
+//   default: 'View',
+// }));
+
+// Firebase Firestore update
+test('When valid parameters returns `false`', () => {
+  const proj: IProject = {
+    company_id: '1',
+    name: 'test'          
+  };
+  let result = false;
+  act(async () => {
+    const {UpdateProject} = require('./UpdateProject');
+    result = await UpdateProject(proj, '1');
+  });
+  expect(result).toBeFalsy();
+});
+
+describe('fire component click event', () => {
+  test('Click should fire event', () => {
+    let result = false;
+    const setResult = () => {
+      result = true;
+    };
+    const {getByLabelText} = render(
+      <TextButton
+        loading={false}
+        onPress={() => setResult()}
+        accessibilityLabel="test"
+      />,
+    );
+    const button = getByLabelText('test');
+    fireEvent.press(button);
+    expect(result).toBeTruthy();
+  });
+})
+
+describe('Navigation render', () => {
+  test('Label renders when navigator is ready', async (done) => {
+    const component = render(<Navigation colorScheme="light" />);
+
+    let emptyLabel: ReactTestInstance;
+    act(async () => {
+      emptyLabel = await waitFor(() => component.getByLabelText('Users'));
+    });
+    done();
+    expect(emptyLabel.children).toBe(['Inget än']);
+  });
+});
+
+describe('set TextInput and await async event', () => {
+  test('when login is pressed status is `success`', async (done) => {
+    // Arrange
+    const {getByLabelText} = render(<LoginScreen />);
+    const email = getByLabelText('email');
+    fireEvent.changeText(email, 'test@crossplatform.se');
+    const password = getByLabelText('password');
+    fireEvent.changeText(password, 'test123');
+    const button = getByLabelText('Logga in');
+
+    // Act
+    await fireEvent.press(button);
+    const child = await waitFor(() => getByLabelText('status'));
+    done();
+
+    // Assert
+    expect(child.props.value).toBe('Inloggad!');
+  });
+});
+
+// Mock once
+// Assuming jest.config has 
+//  restoreMocks: true,
+describe('MOCK ONCE', () => {
+   beforeEach(() => {
+    jest.resetModules();
+  });
+
+it('when nav state `Menu` color is `waiting`', () => {
+  jest.mock('@react-navigation/native', () => ({
+    useNavigationState: () => 'Menu',
+    useNavigation: () => {},
+  }));
+  jest.mock('./UseOrders', () => ({
+    UseOrders: () => ({
+      busy: false,
+      error: undefined,
+      empty: false,
+      itemsWithKey: [{status: 'ondelivery'}],
+    }),
+  }));
+
+  // Dynamic component import
+  const OrderFab = require('./OrderFab').default;
+
+  // Async render of component with hooks
+  let wrapper: ReactTestRenderer | undefined = undefined;
+  act(() => {
+    wrapper = create(
+      <OrderContext.Provider value={orderContextValue}>
+        <OrderFab />
+      </OrderContext.Provider>,
+    );
+  });
+  //@ts-ignore
+  const fab = wrapper.root.findByProps({testID: 'fab'});
+  expect(fab.props.color).toBe(Colors.Waiting);
+});
+})
+
+// Hook test
+import {renderHook, act} from '@testing-library/react-hooks';
+import {useAuthState} from './useAuthState';
+
+jest.unmock('react-native');
+
+describe('firebase', () => {
+  describe('useAuthState', () => {
+    it('user should be undefined', async () => {
+      const render = renderHook(() => useAuthState());
+      render.waitForNextUpdate();
+      expect(render.result.current.user).toBeUndefined();
+    });
+    it('getUser should set user', async () => {
+      const {result} = renderHook(() => useAuthState());
+      await act(async () => result.current.getUser());
+      expect(result.current.user).not.toBeUndefined();
+    });
+  });
+});
+
+// Context test
+describe('commponents', () => {
+  describe('<OrderContextProvider />', () => {
+    it('Renders correctly', () => {
+      renderer.create(
+        <OrderContextProvider key={1}>
+          <View />
+        </OrderContextProvider>,
+      );
+    });
+  });
+});

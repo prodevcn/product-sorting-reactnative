@@ -1,0 +1,17 @@
+**/node_modules/*
+**/out/*
+**/.next/*
+node_modules
+.next
+yarn.lock
+package-lock.json
+public
+ios/Pods
+android/app/build
+build
+config
+**/coverage/*
+.jest
+**/functions/lib/*
+.expo
+web-build
